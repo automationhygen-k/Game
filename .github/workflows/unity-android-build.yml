@@ -4,7 +4,17 @@ on:
   push:
     branches:
       - "**"
+    paths:
+      - "Assets/**"
+      - "Packages/**"
+      - "ProjectSettings/**"
+      - ".github/workflows/unity-android-build.yml"
   pull_request:
+    paths:
+      - "Assets/**"
+      - "Packages/**"
+      - "ProjectSettings/**"
+      - ".github/workflows/unity-android-build.yml"
   workflow_dispatch:
 
 concurrency:
@@ -15,13 +25,19 @@ jobs:
   build-android:
     name: Build Android (Unity)
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           lfs: true
+
+      - name: Validate Unity project structure
+        run: |
+          test -f ProjectSettings/ProjectVersion.txt
+          test -f Packages/manifest.json
+          test -d Assets
 
       - name: Cache Unity Library
         uses: actions/cache@v4
@@ -51,6 +67,7 @@ jobs:
         with:
           name: android-build
           path: build/Android
+          if-no-files-found: error
 
       - name: Build summary
         run: |

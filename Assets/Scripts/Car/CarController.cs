@@ -31,7 +31,11 @@ namespace OpenWorldRealisticMobileRacer.Car
         [SerializeField] private float driftSidewaysStiffness = 0.7f;
         [SerializeField] private float highSpeedGripReduction = 0.78f;
         [SerializeField] private float tractionRecoverySpeed = 2.5f;
+        [SerializeField] private float tractionControlStrength = 0.25f;
+        [SerializeField] private float stabilityAssistStrength = 0.9f;
+        [SerializeField] private float downforceAtTopSpeed = 2100f;
         [SerializeField] private AnimationCurve steeringBySpeed = AnimationCurve.EaseInOut(0f, 1f, 1f, 0.35f);
+        [SerializeField] private AnimationCurve torqueBySpeed = AnimationCurve.EaseInOut(0f, 1f, 1f, 0.72f);
 
         [Header("Input")]
         [SerializeField] private TouchInputProvider inputProvider;
@@ -48,16 +52,24 @@ namespace OpenWorldRealisticMobileRacer.Car
         {
             rb = GetComponent<Rigidbody>();
             rb.centerOfMass = new Vector3(0f, -0.45f, 0f);
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
         }
 
         private void FixedUpdate()
         {
+            if (inputProvider == null)
+            {
+                return;
+            }
+
             SpeedKph = rb.velocity.magnitude * 3.6f;
             inputProvider.SetVehicleSpeed(SpeedKph);
 
             ApplySteering();
             ApplyMotorAndBrakes();
             ApplyGripModel();
+            ApplyStabilityAssist();
+            ApplyDownforce();
             LimitTopSpeed();
             SyncWheelVisuals();
             UpdateTelemetry();
@@ -79,7 +91,10 @@ namespace OpenWorldRealisticMobileRacer.Car
             float brake = inputProvider.Brake;
             bool handbrake = inputProvider.Handbrake;
 
-            float torque = throttle * engineForce;
+            float speed01 = Mathf.Clamp01(SpeedKph / topSpeedKph);
+            float torqueCurve = torqueBySpeed.Evaluate(speed01);
+            float tcs = Mathf.Lerp(1f, 1f - tractionControlStrength, Mathf.Clamp01(LateralSlip));
+            float torque = throttle * engineForce * torqueCurve * tcs;
             rearLeft.motorTorque = torque;
             rearRight.motorTorque = torque;
 
@@ -105,11 +120,10 @@ namespace OpenWorldRealisticMobileRacer.Car
             float speedFactor = Mathf.Clamp01(SpeedKph / topSpeedKph);
             float speedGrip = Mathf.Lerp(1f, highSpeedGripReduction, speedFactor);
 
-            WheelHit hit;
-            rearLeft.GetGroundHit(out hit);
-            float leftSlip = Mathf.Abs(hit.sidewaysSlip);
-            rearRight.GetGroundHit(out hit);
-            float rightSlip = Mathf.Abs(hit.sidewaysSlip);
+            rearLeft.GetGroundHit(out WheelHit leftHit);
+            rearRight.GetGroundHit(out WheelHit rightHit);
+            float leftSlip = Mathf.Abs(leftHit.sidewaysSlip);
+            float rightSlip = Mathf.Abs(rightHit.sidewaysSlip);
             LateralSlip = Mathf.Max(leftSlip, rightSlip);
 
             bool wantsDrift = inputProvider.Handbrake || (Mathf.Abs(inputProvider.Steering) > 0.45f && inputProvider.Throttle > 0.65f && SpeedKph > 35f);
@@ -148,6 +162,26 @@ namespace OpenWorldRealisticMobileRacer.Car
             IsDrifting = driftBlend > 0.35f && LateralSlip > 0.2f;
         }
 
+        private void ApplyStabilityAssist()
+        {
+            if (SpeedKph < 40f)
+            {
+                return;
+            }
+
+            Vector3 localVel = transform.InverseTransformDirection(rb.velocity);
+            float sideways = localVel.x;
+            Vector3 correction = -transform.right * sideways * stabilityAssistStrength;
+            rb.AddForce(correction, ForceMode.Acceleration);
+        }
+
+        private void ApplyDownforce()
+        {
+            float speedT = Mathf.Clamp01(SpeedKph / topSpeedKph);
+            float downforce = Mathf.Lerp(0f, downforceAtTopSpeed, speedT * speedT);
+            rb.AddForce(-transform.up * downforce, ForceMode.Force);
+        }
+
         private void LimitTopSpeed()
         {
             if (SpeedKph <= topSpeedKph)
@@ -180,9 +214,7 @@ namespace OpenWorldRealisticMobileRacer.Car
                 return;
             }
 
-            Vector3 pos;
-            Quaternion rot;
-            col.GetWorldPose(out pos, out rot);
+            col.GetWorldPose(out Vector3 pos, out Quaternion rot);
             visual.position = pos;
             visual.rotation = rot;
         }

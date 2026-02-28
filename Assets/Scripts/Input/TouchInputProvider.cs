@@ -11,6 +11,11 @@ namespace OpenWorldRealisticMobileRacer.InputSystem
         [SerializeField, Range(20f, 220f)] private float maxSpeedForSteeringReduction = 140f;
         [SerializeField, Range(0.15f, 1f)] private float minSteeringFactorAtTopSpeed = 0.4f;
 
+        [Header("Swipe Steering (Optional)")]
+        [SerializeField] private bool enableSwipeSteering;
+        [SerializeField] private float swipeDeadZonePixels = 12f;
+        [SerializeField] private float swipeToFullSteerPixels = 220f;
+
         [Header("Fallback Keyboard (Editor Only)")]
         [SerializeField] private bool allowKeyboardFallback = true;
 
@@ -22,6 +27,10 @@ namespace OpenWorldRealisticMobileRacer.InputSystem
         private float steeringTarget;
         private float smoothedSteering;
         private float currentSpeedKph;
+
+        private bool swipeActive;
+        private int swipeFingerId = -1;
+        private Vector2 swipeStart;
 
         public void SetSteeringFromWheel(float normalizedSteering)
         {
@@ -55,6 +64,11 @@ namespace OpenWorldRealisticMobileRacer.InputSystem
 
         private void Update()
         {
+            if (enableSwipeSteering)
+            {
+                HandleSwipeSteering();
+            }
+
             float speedT = Mathf.Clamp01(currentSpeedKph / maxSpeedForSteeringReduction);
             float speedFactor = Mathf.Lerp(1f, minSteeringFactorAtTopSpeed, speedT);
             float target = steeringTarget * steeringSensitivity * speedFactor;
@@ -62,7 +76,8 @@ namespace OpenWorldRealisticMobileRacer.InputSystem
             Steering = Mathf.Clamp(smoothedSteering, -1f, 1f);
 
 #if UNITY_EDITOR
-            if (allowKeyboardFallback && !EventSystem.current.IsPointerOverGameObject())
+            bool pointerOverUi = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+            if (allowKeyboardFallback && !pointerOverUi)
             {
                 float h = UnityEngine.Input.GetAxis("Horizontal");
                 float v = UnityEngine.Input.GetAxis("Vertical");
@@ -72,6 +87,70 @@ namespace OpenWorldRealisticMobileRacer.InputSystem
                 Handbrake = UnityEngine.Input.GetKey(KeyCode.Space);
             }
 #endif
+        }
+
+        private void HandleSwipeSteering()
+        {
+            if (Input.touchCount == 0)
+            {
+                swipeActive = false;
+                swipeFingerId = -1;
+                return;
+            }
+
+            if (!swipeActive)
+            {
+                for (int i = 0; i < Input.touchCount; i++)
+                {
+                    Touch touch = Input.GetTouch(i);
+                    if (touch.phase != TouchPhase.Began)
+                    {
+                        continue;
+                    }
+
+                    swipeActive = true;
+                    swipeFingerId = touch.fingerId;
+                    swipeStart = touch.position;
+                    break;
+                }
+
+                return;
+            }
+
+            bool found = false;
+            for (int i = 0; i < Input.touchCount; i++)
+            {
+                Touch touch = Input.GetTouch(i);
+                if (touch.fingerId != swipeFingerId)
+                {
+                    continue;
+                }
+
+                found = true;
+                if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
+                {
+                    swipeActive = false;
+                    swipeFingerId = -1;
+                    steeringTarget = 0f;
+                    return;
+                }
+
+                float deltaX = touch.position.x - swipeStart.x;
+                if (Mathf.Abs(deltaX) < swipeDeadZonePixels)
+                {
+                    steeringTarget = 0f;
+                    return;
+                }
+
+                steeringTarget = Mathf.Clamp(deltaX / swipeToFullSteerPixels, -1f, 1f);
+                return;
+            }
+
+            if (!found)
+            {
+                swipeActive = false;
+                swipeFingerId = -1;
+            }
         }
     }
 }

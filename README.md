@@ -13,6 +13,7 @@ This repository provides a complete **project blueprint + production-ready C# ga
 - HUD (speed + RPM + pause).
 - World bootstrap for fog/sky/shadow/perf defaults.
 - Scenic ambient audio zones.
+- Adaptive runtime quality scaler (render scale + shadows) for stable premium visuals.
 
 ## Folder Layout
 
@@ -166,6 +167,26 @@ Create one scenic macro-loop that always changes mood:
 
 ---
 
+
+## Driving Feel Polish (Recommended Defaults)
+
+The car stack now includes additional feel systems:
+- Traction control modulation at high slip.
+- Stability assist to reduce snap-spin at speed.
+- Speed-based aerodynamic downforce for planted high-speed turns.
+- Torque-by-speed curve for better pull out of corners and less wheelspin spikes.
+
+HUD polish additions:
+- Smoothed speed/RPM readouts (less jitter).
+- Gear indicator text support.
+- Drift intensity bar (bind to `Image` fill).
+
+Input polish additions:
+- Optional swipe steering mode for phones where virtual wheel feels heavy.
+- Safe `EventSystem` handling for editor fallback controls.
+
+---
+
 ## Camera Setup
 
 1. Main Camera → add `ChaseCameraController`.
@@ -222,9 +243,10 @@ Required repository secrets:
 - `UNITY_PASSWORD`
 
 Workflow behavior:
-- Triggers on every push and pull request.
+- Triggers on relevant push/pull_request changes under `Assets/`, `Packages/`, `ProjectSettings/`, and workflow file.
+- Validates Unity project structure before build starts.
 - Builds Android App Bundle (`.aab`) using `game-ci/unity-builder`.
-- Uploads build output as `android-build` artifact.
+- Uploads build output as `android-build` artifact and fails if artifact is missing.
 
 
 CI reliability note:
@@ -241,7 +263,8 @@ CI reliability note:
 - `ChaseCameraController`: chase cam smoothing + FOV + drift shake.
 - `HUDController`: speed/RPM/pause updates.
 - `WorldBootstrap`: fog, skybox, high-end graphics defaults (shadows/AA/LOD/anisotropy) + target framerate policy.
-- `UltraGraphicsConfigurator`: pushes Ultra visuals on high-end phones and auto-falls back to High/Balanced on weaker devices.
+- `UltraGraphicsConfigurator`: pushes high-end URP visuals for mid/high/premium devices with tiered frame targets.
+- `AdaptiveQualityRuntime`: dynamic render-scale/shadow tuning to keep frame time stable without hard visual drops.
 - `ScenicZoneAudio`: fade-in/out ambience by trigger zone.
 
 This setup is intentionally tuned for **mobile realism through illusion and feel**, not brute-force simulation.
