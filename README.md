@@ -261,7 +261,7 @@ Behavior:
 - Runs one job that compiles a **full Android APK**.
 - Verifies at least one `.apk` file exists after build.
 - Uploads one artifact: `android-apk`.
-- Fails fast if Unity secrets are missing and only succeeds when a real APK is built.
+- If Unity secrets are missing, workflow exits cleanly (no failure) and reports exactly which secrets are required; when secrets exist, it enforces real APK output.
 
 Required repository secrets:
 - `UNITY_LICENSE`
