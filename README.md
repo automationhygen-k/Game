@@ -216,6 +216,10 @@ Workflow behavior:
 - Builds Android App Bundle (`.aab`) using `game-ci/unity-builder`.
 - Uploads build output as `android-build` artifact.
 
+
+CI reliability note:
+- This repo now includes `ProjectSettings/ProjectVersion.txt` and `Packages/manifest.json` so GameCI can detect Unity version and resolve packages during builds.
+
 ---
 
 ## Script Wiring Quick Reference
