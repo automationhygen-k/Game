@@ -252,24 +252,19 @@ To keep this codebase working now, visual quality upgrades are implemented in Un
 
 ---
 
-## GitHub Actions (Auto-Compile on Push)
+## GitHub Actions (Single Workflow Only)
 
-This repository includes `.github/workflows/unity-android-build.yml` to automatically build Android when you push to GitHub.
+This repository now uses **one** GitHub Action workflow: `.github/workflows/unity-android-build.yml`.
+
+Behavior:
+- Triggers on every push.
+- Runs one job that compiles an **Android APK**.
+- Uploads one artifact: `android-apk`.
 
 Required repository secrets:
 - `UNITY_LICENSE`
 - `UNITY_EMAIL`
 - `UNITY_PASSWORD`
-
-Workflow behavior:
-- Triggers on relevant push/pull_request changes under `Assets/`, `Packages/`, `ProjectSettings/`, and workflow file.
-- Validates Unity project structure before build starts.
-- Builds Android App Bundle (`.aab`) using `game-ci/unity-builder`.
-- Uploads build output as `android-build` artifact and fails if artifact is missing.
-
-
-CI reliability note:
-- This repo now includes `ProjectSettings/ProjectVersion.txt` and `Packages/manifest.json` so GameCI can detect Unity version and resolve packages during builds.
 
 ---
 

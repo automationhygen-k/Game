@@ -1,29 +1,17 @@
-name: Unity Android CI Build
+name: Compile Android APK
 
 on:
   push:
     branches:
       - "**"
-    paths:
-      - "Assets/**"
-      - "Packages/**"
-      - "ProjectSettings/**"
-      - ".github/workflows/unity-android-build.yml"
-  pull_request:
-    paths:
-      - "Assets/**"
-      - "Packages/**"
-      - "ProjectSettings/**"
-      - ".github/workflows/unity-android-build.yml"
-  workflow_dispatch:
 
 concurrency:
-  group: unity-android-${{ github.ref }}
+  group: compile-apk-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-android:
-    name: Build Android (Unity)
+  compile-apk:
+    name: Compile APK (Unity)
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
@@ -33,21 +21,7 @@ jobs:
         with:
           lfs: true
 
-      - name: Validate Unity project structure
-        run: |
-          test -f ProjectSettings/ProjectVersion.txt
-          test -f Packages/manifest.json
-          test -d Assets
-
-      - name: Cache Unity Library
-        uses: actions/cache@v4
-        with:
-          path: Library
-          key: Library-Android-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**', '.github/workflows/**') }}
-          restore-keys: |
-            Library-Android-
-
-      - name: Build Android with GameCI
+      - name: Build APK with GameCI
         uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -57,19 +31,13 @@ jobs:
           projectPath: .
           unityVersion: 2022.3.20f1
           targetPlatform: Android
-          androidExportType: androidAppBundle
+          androidExportType: androidPackage
           allowDirtyBuild: true
           buildName: OpenWorldRealisticMobileRacer_SUPERWORLD
-          versioning: Semantic
 
-      - name: Upload Android build artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: android-build
+          name: android-apk
           path: build/Android
           if-no-files-found: error
-
-      - name: Build summary
-        run: |
-          echo "Unity Android build completed for $GITHUB_SHA" >> $GITHUB_STEP_SUMMARY
-          echo "Artifact: android-build" >> $GITHUB_STEP_SUMMARY
