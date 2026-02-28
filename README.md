@@ -87,6 +87,16 @@ Assets/
 - Add `UltraGraphicsConfigurator` to auto-pick Ultra/High/Balanced tiers by device memory.
 - Keep Ultra only for devices with strong memory/GPU budget.
 
+### 6) Mid → Premium Processor Graphics Tiers (Max Visual Push)
+Attach `UltraGraphicsConfigurator` in your bootstrap scene and assign URP asset if needed.
+
+Tier behavior:
+- **Mid tier (6GB RAM+)**: High visuals with balanced shadows, 45 FPS target, 2x MSAA, reduced render scale.
+- **High tier (8GB RAM + 3GB GPU mem)**: Very high visuals, 60 FPS target, 4x MSAA, full-res textures.
+- **Premium tier (12GB RAM + 6GB GPU mem)**: Max mobile visuals, longer shadows, upscaled render scale, 90 FPS target.
+
+This is tuned for **mid to premium processors** to push visuals while retaining stable frame pacing.
+
 ---
 
 ## World Construction Plan (Single Continuous Loop)
