@@ -260,6 +260,7 @@ Behavior:
 - Triggers on every push.
 - Runs one job that compiles an **Android APK**.
 - Uploads one artifact: `android-apk`.
+- If Unity secrets are missing, it safely skips build and writes the reason in workflow summary (instead of failing immediately).
 
 Required repository secrets:
 - `UNITY_LICENSE`
