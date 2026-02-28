@@ -98,6 +98,17 @@ Tier behavior:
 
 This is tuned for **mid to premium processors** to push visuals while retaining stable frame pacing.
 
+### 7) Cinematic Depth Stack (Mobile-Safe)
+- Add a Global Volume and attach `MobilePostProcessingConfigurator`.
+- It auto-detects Mid/High/Premium devices and tunes:
+  - ACES tonemapping
+  - Color adjustments + white balance
+  - Bloom + vignette
+  - Motion blur (high tiers)
+  - Depth of field (high tiers)
+  - Subtle chromatic aberration + film grain
+- Goal: PC-like depth and speed sensation on mobile without brute-force rendering cost.
+
 ---
 
 ## World Construction Plan (Single Continuous Loop)
@@ -233,6 +244,14 @@ If FPS drops:
 ---
 
 
+
+## Engine Scope Note
+
+This repository is currently a Unity URP project. Replacing it with Unreal Engine would require a full engine migration (project files, assets, build pipeline, gameplay code rewrite).
+To keep this codebase working now, visual quality upgrades are implemented in Unity with mobile-focused cinematic post and adaptive quality systems.
+
+---
+
 ## GitHub Actions (Auto-Compile on Push)
 
 This repository includes `.github/workflows/unity-android-build.yml` to automatically build Android when you push to GitHub.
@@ -265,6 +284,7 @@ CI reliability note:
 - `WorldBootstrap`: fog, skybox, high-end graphics defaults (shadows/AA/LOD/anisotropy) + target framerate policy.
 - `UltraGraphicsConfigurator`: pushes high-end URP visuals for mid/high/premium devices with tiered frame targets.
 - `AdaptiveQualityRuntime`: dynamic render-scale/shadow tuning to keep frame time stable without hard visual drops.
+- `MobilePostProcessingConfigurator`: tiered cinematic post-processing (motion blur, DoF, tonemapping, bloom) for mid/high/premium devices.
 - `ScenicZoneAudio`: fade-in/out ambience by trigger zone.
 
 This setup is intentionally tuned for **mobile realism through illusion and feel**, not brute-force simulation.
