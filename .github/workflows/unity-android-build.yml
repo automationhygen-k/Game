@@ -1,0 +1,73 @@
+name: Compile Android APK
+
+on:
+  push:
+    branches:
+      - "**"
+
+concurrency:
+  group: compile-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compile-apk:
+    name: Compile APK (Unity)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Validate Unity project structure
+        run: |
+          test -f ProjectSettings/ProjectVersion.txt
+          test -f Packages/manifest.json
+          test -d Assets
+
+      - name: Validate Unity secrets
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: |
+          test -n "$UNITY_LICENSE"
+          test -n "$UNITY_EMAIL"
+          test -n "$UNITY_PASSWORD"
+
+      - name: Build APK with GameCI
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: .
+          unityVersion: 2022.3.20f1
+          targetPlatform: Android
+          androidExportType: androidPackage
+          buildPath: build/android-apk
+          allowDirtyBuild: true
+          buildName: OpenWorldRealisticMobileRacer_SUPERWORLD
+
+      - name: Verify APK output
+        run: |
+          APK_COUNT=$(find build/android-apk -type f -name "*.apk" | wc -l)
+          echo "APK_COUNT=$APK_COUNT" >> "$GITHUB_ENV"
+          test "$APK_COUNT" -ge 1
+          find build/android-apk -type f -name "*.apk"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: build/android-apk/**/*.apk
+          if-no-files-found: error
+
+      - name: Build summary
+        run: |
+          echo "Unity Android APK build completed for $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "APK files built: $APK_COUNT" >> "$GITHUB_STEP_SUMMARY"
+          echo "Artifact: android-apk" >> "$GITHUB_STEP_SUMMARY"
