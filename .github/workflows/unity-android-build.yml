@@ -1,0 +1,86 @@
+name: Compile Android APK
+
+on:
+  push:
+    branches:
+      - "**"
+
+concurrency:
+  group: compile-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compile-apk:
+    name: Compile APK (Unity)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Check Unity secrets availability
+        id: secrets
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: |
+          if [ -z "$UNITY_LICENSE" ] || [ -z "$UNITY_EMAIL" ] || [ -z "$UNITY_PASSWORD" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "⚠️ APK compile skipped: missing UNITY_LICENSE / UNITY_EMAIL / UNITY_PASSWORD secrets." >> "$GITHUB_STEP_SUMMARY"
+            echo "Add all 3 secrets in GitHub repo settings to enable full APK compilation." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout repository
+        if: steps.secrets.outputs.ready == 'true'
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Validate Unity project structure
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          test -f ProjectSettings/ProjectVersion.txt
+          test -f Packages/manifest.json
+          test -d Assets
+
+      - name: Build APK with GameCI
+        if: steps.secrets.outputs.ready == 'true'
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: .
+          unityVersion: 2022.3.20f1
+          targetPlatform: Android
+          androidExportType: androidPackage
+          buildPath: build/android-apk
+          allowDirtyBuild: true
+          buildName: OpenWorldRealisticMobileRacer_SUPERWORLD
+          buildMethod: OpenWorldRealisticMobileRacer.EditorTools.CliAndroidBuilder.BuildAndroidApk
+          customParameters: -customBuildPath build/android-apk/OpenWorldRealisticMobileRacer.apk
+
+      - name: Verify APK output
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          APK_COUNT=$(find build/android-apk -type f -name "*.apk" | wc -l)
+          echo "APK_COUNT=$APK_COUNT" >> "$GITHUB_ENV"
+          test "$APK_COUNT" -ge 1
+          find build/android-apk -type f -name "*.apk"
+
+      - name: Upload APK artifact
+        if: steps.secrets.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: build/android-apk/**/*.apk
+          if-no-files-found: error
+
+      - name: Build summary
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          echo "✅ Unity Android APK build completed for $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "APK files built: $APK_COUNT" >> "$GITHUB_STEP_SUMMARY"
+          echo "Artifact: android-apk" >> "$GITHUB_STEP_SUMMARY"
