@@ -2,6 +2,14 @@
 
 This repository provides a complete **project blueprint + production-ready C# gameplay systems** for a mobile-oriented open-world racing prototype with a handcrafted loop map and high-feel driving.
 
+## Quick Final Install & Run
+
+For a straight-to-phone install checklist, use:
+- `Docs/FINAL_INSTALL_AND_RUN.md`
+- `./scripts/verify_project_ready.sh`
+
+---
+
 ## Implemented Systems
 
 - Drift-capable WheelCollider vehicle controller.
