@@ -7,7 +7,7 @@ This repository provides a complete **project blueprint + production-ready C# ga
 For a straight-to-phone install checklist, use:
 - `Docs/FINAL_INSTALL_AND_RUN.md`
 - `./scripts/verify_project_ready.sh`
-- `./scripts/build_apk_local.sh`
+- `./scripts/build_apk_local.sh` (auto-resolves scenes; auto-creates minimal bootstrap scene if none exist)
 
 ---
 

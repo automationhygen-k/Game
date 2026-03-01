@@ -49,7 +49,7 @@ if [[ ! -f ProjectSettings/ProjectVersion.txt || ! -f Packages/manifest.json ]];
 fi
 
 echo "Using Unity: $UNITY_BIN"
-echo "Building Android APK..."
+echo "Building Android APK (auto-resolve scenes if Build Settings is empty)..."
 
 "$UNITY_BIN" \
   -batchmode \

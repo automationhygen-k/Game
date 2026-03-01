@@ -11,6 +11,7 @@ This is the final, practical checklist to get the project running on a phone.
 
 This uses a CLI build method (`CliAndroidBuilder`) and outputs:
 - `build/local-apk/OpenWorldRealisticMobileRacer.apk`
+- auto-resolves build scenes; if none exist, it auto-generates a minimal bootstrap scene to make first APK build succeed.
 
 If Unity is not auto-detected, set:
 ```bash
@@ -35,7 +36,8 @@ export UNITY_PATH="/path/to/Unity"
    - API Compatibility: `.NET Standard 2.1`
 
 ## 4) Scene Wiring (Minimum)
-- Add car prefab/root with `CarController` and wheel colliders.
+- For first-time test builds, wiring is optional because CLI builder can auto-create a minimal bootstrap scene.
+- For actual gameplay, add car prefab/root with `CarController` and wheel colliders.
 - Add `TouchInputProvider`, `HUDController`, `ChaseCameraController`.
 - Add audio setup with `EngineAudioController` and snapshots.
 - Add world systems (`WorldBootstrap`, `UltraGraphicsConfigurator`).

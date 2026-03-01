@@ -1,8 +1,12 @@
 #if UNITY_EDITOR
 using System;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace OpenWorldRealisticMobileRacer.EditorTools
 {
@@ -10,14 +14,13 @@ namespace OpenWorldRealisticMobileRacer.EditorTools
     {
         public static void BuildAndroidApk()
         {
-            string outputPath = Environment.GetCommandLineArgs() is var args
-                ? GetArg(args, "-customBuildPath", "build/local-apk/OpenWorldRealisticMobileRacer.apk")
-                : "build/local-apk/OpenWorldRealisticMobileRacer.apk";
+            string[] args = Environment.GetCommandLineArgs();
+            string outputPath = GetArg(args, "-customBuildPath", "build/local-apk/OpenWorldRealisticMobileRacer.apk");
 
-            string[] scenes = GetEnabledScenes();
+            string[] scenes = ResolveBuildScenes();
             if (scenes.Length == 0)
             {
-                throw new Exception("No enabled scenes in Build Settings.");
+                throw new Exception("Unable to resolve scenes for build.");
             }
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? "build/local-apk");
@@ -37,14 +40,58 @@ namespace OpenWorldRealisticMobileRacer.EditorTools
                 throw new Exception($"Android APK build failed: {report.summary.result}");
             }
 
-            Console.WriteLine($"APK build succeeded: {outputPath}");
+            Debug.Log($"APK build succeeded: {outputPath}");
         }
 
-        private static string[] GetEnabledScenes()
+        private static string[] ResolveBuildScenes()
         {
-            return Array.FindAll(EditorBuildSettings.scenes, s => s.enabled) is var scenes
-                ? Array.ConvertAll(scenes, s => s.path)
-                : Array.Empty<string>();
+            string[] enabledBuildScenes = EditorBuildSettings.scenes
+                .Where(s => s != null && s.enabled && !string.IsNullOrWhiteSpace(s.path))
+                .Select(s => s.path)
+                .Distinct()
+                .ToArray();
+
+            if (enabledBuildScenes.Length > 0)
+            {
+                return enabledBuildScenes;
+            }
+
+            string[] projectScenes = AssetDatabase.FindAssets("t:Scene", new[] { "Assets/Scenes", "Assets" })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Where(p => p.EndsWith(".unity", StringComparison.OrdinalIgnoreCase))
+                .Distinct()
+                .ToArray();
+
+            if (projectScenes.Length > 0)
+            {
+                EditorBuildSettings.scenes = projectScenes.Select(p => new EditorBuildSettingsScene(p, true)).ToArray();
+                return projectScenes;
+            }
+
+            string autoScene = CreateAutoBootstrapScene();
+            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(autoScene, true) };
+            return new[] { autoScene };
+        }
+
+        private static string CreateAutoBootstrapScene()
+        {
+            const string scenePath = "Assets/Scenes/AutoBootstrap.unity";
+            Directory.CreateDirectory("Assets/Scenes");
+
+            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+
+            GameObject bootstrap = new GameObject("AutoBootstrap");
+            bootstrap.tag = "Untagged";
+
+            var worldBootstrapType = Type.GetType("OpenWorldRealisticMobileRacer.World.WorldBootstrap, Assembly-CSharp");
+            if (worldBootstrapType != null)
+            {
+                bootstrap.AddComponent(worldBootstrapType);
+            }
+
+            EditorSceneManager.SaveScene(scene, scenePath);
+            AssetDatabase.Refresh();
+            return scenePath;
         }
 
         private static string GetArg(string[] args, string key, string fallback)
