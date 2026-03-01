@@ -7,6 +7,7 @@ This repository provides a complete **project blueprint + production-ready C# ga
 For a straight-to-phone install checklist, use:
 - `Docs/FINAL_INSTALL_AND_RUN.md`
 - `./scripts/verify_project_ready.sh`
+- `./scripts/build_apk_local.sh`
 
 ---
 
@@ -266,7 +267,7 @@ This repository now uses **one** GitHub Action workflow: `.github/workflows/unit
 
 Behavior:
 - Triggers on every push.
-- Runs one job that compiles a **full Android APK**.
+- Runs one job that compiles a **full Android APK** (explicit CLI build method).
 - Verifies at least one `.apk` file exists after build.
 - Uploads one artifact: `android-apk`.
 - If Unity secrets are missing, workflow exits cleanly (no failure) and reports exactly which secrets are required; when secrets exist, it enforces real APK output.

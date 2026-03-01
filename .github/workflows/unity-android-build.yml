@@ -59,6 +59,8 @@ jobs:
           buildPath: build/android-apk
           allowDirtyBuild: true
           buildName: OpenWorldRealisticMobileRacer_SUPERWORLD
+          buildMethod: OpenWorldRealisticMobileRacer.EditorTools.CliAndroidBuilder.BuildAndroidApk
+          customParameters: -customBuildPath build/android-apk/OpenWorldRealisticMobileRacer.apk
 
       - name: Verify APK output
         if: steps.secrets.outputs.ready == 'true'

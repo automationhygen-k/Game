@@ -2,6 +2,21 @@
 
 This is the final, practical checklist to get the project running on a phone.
 
+## 0) Plug-and-Play One-Command Options
+
+### Local machine APK build (recommended)
+```bash
+./scripts/build_apk_local.sh
+```
+
+This uses a CLI build method (`CliAndroidBuilder`) and outputs:
+- `build/local-apk/OpenWorldRealisticMobileRacer.apk`
+
+If Unity is not auto-detected, set:
+```bash
+export UNITY_PATH="/path/to/Unity"
+```
+
 ## 1) Install Requirements
 - Unity Hub
 - Unity Editor `2022.3.20f1` (Android Build Support module installed)
@@ -40,12 +55,14 @@ Set these repository secrets:
 - `UNITY_PASSWORD`
 
 Push to GitHub. Workflow compiles APK and uploads `android-apk` artifact.
+Workflow uses the same explicit CLI build method as local script for consistent output.
 
 ## 7) Quick Readiness Check Script
 Run:
 
 ```bash
 ./scripts/verify_project_ready.sh
+./scripts/build_apk_local.sh
 ```
 
 It validates:

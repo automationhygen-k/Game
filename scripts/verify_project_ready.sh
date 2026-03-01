@@ -22,7 +22,8 @@ for f in \
   Assets/Scripts/Audio/EngineAudioController.cs \
   Assets/Scripts/Camera/ChaseCameraController.cs \
   Assets/Scripts/UI/HUDController.cs \
-  Assets/Scripts/World/WorldBootstrap.cs
+  Assets/Scripts/World/WorldBootstrap.cs \
+  Assets/Scripts/Editor/CliAndroidBuilder.cs
   do
   [[ -f "$f" ]]
 done
